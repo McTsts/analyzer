@@ -56,12 +56,14 @@ module M = Messages
     - heterogeneous environments: https://link.springer.com/chapter/10.1007%2F978-3-030-17184-1_26 (Section 4.1) *)
 
 let widening_thresholds_apron = ResettableLazy.from_fun (fun () ->
+    if M.tracing then M.trace "test" "1";
     let t = if GobConfig.get_string "ana.apron.threshold_widening_constants" = "comparisons" then WideningThresholds.octagon_thresholds () else WideningThresholds.thresholds_incl_mul2 () in
     let r = List.map (fun x -> Apron.Scalar.of_mpqf @@ Mpqf.of_mpz @@ Z_mlgmpidl.mpz_of_z x) t in
     Array.of_list r
   )
 
 let reset_lazy () =
+  if M.tracing then M.trace "test" "2";
   ResettableLazy.reset widening_thresholds_apron
 
 module V = RelationDomain.V
@@ -160,9 +162,15 @@ struct
   type t = Man.mt A.t
 
   let bound_texpr d texpr1 =
+    if Messages.tracing then Messages.trace "test" "bounds1";
+    Abstract1.print Format.std_formatter d;
+    Format.print_flush ();
     let bounds = A.bound_texpr Man.mgr d texpr1 in
+    if Messages.tracing then Messages.trace "test" "bounds2";
     let min = SharedFunctions.int_of_scalar ~round:`Ceil bounds.inf in
+    if Messages.tracing then Messages.trace "test" "bounds3";
     let max = SharedFunctions.int_of_scalar ~round:`Floor bounds.sup in
+    if Messages.tracing then Messages.trace "test" "bounds4";
     (min, max)
 end
 
@@ -222,18 +230,22 @@ struct
     remove_vars_with nd vs;
     nd
   let remove_filter d f =
+    if M.tracing then M.trace "test" "6";
     let nd = copy d in
     remove_filter_with nd f;
     nd
   let keep_vars d vs =
+    if M.tracing then M.trace "test" "7";
     let nd = copy d in
     keep_vars_with nd vs;
     nd
   let keep_filter d f =
+    if M.tracing then M.trace "test" "8";
     let nd = copy d in
     keep_filter_with nd f;
     nd
   let forget_vars d vs =
+    if M.tracing then M.trace "test" "9";
     let nd = copy d in
     forget_vars_with nd vs;
     nd
@@ -246,6 +258,7 @@ struct
     assign_var_with nd v v';
     nd
   let substitute_exp ask d v e no_ov =
+    if M.tracing then M.trace "test" "12";
     let nd = copy d in
     substitute_exp_with ask nd v e no_ov;
     nd
@@ -302,18 +315,22 @@ struct
   type marshal = Man.mt Abstract0.t * string array
 
   let unmarshal ((abstract0, vs): marshal): t =
+    if M.tracing then M.trace "test" "16";
     let vars = Array.map Var.of_string vs in
     (* We do not have real-valued vars, so we pass an empty array in their place. *)
     let env = Environment.make vars [||] in
     {abstract0; env}
 
-  let vars x = Environment.ivars_only @@ A.env x
+  let vars x = 
+    if M.tracing then M.trace "test" "17";Environment.ivars_only @@ A.env x
 
   let marshal (x: t): marshal =
+    if M.tracing then M.trace "test" "18";
     let vars = Array.map Var.to_string (Array.of_list (vars x)) in
     x.abstract0, vars
 
-  let mem_var d v = Environment.mem_var (A.env d) v
+  let mem_var d v = 
+    if M.tracing then M.trace "test" "19";Environment.mem_var (A.env d) v
 
   let envop f nd a =
     let env' = f (A.env nd) a in
@@ -327,6 +344,7 @@ struct
 
 
   let forget_vars_with nd vs =
+    if M.tracing then M.trace "test" "26";
     (* Unlike keep_vars_with, this doesn't check mem_var, but assumes valid vars, like assigns *)
     let vs' = Array.of_list vs in
     A.forget_array_with Man.mgr nd vs' false
@@ -341,6 +359,7 @@ struct
       forget_vars_with nd [v]
 
   let assign_exp_parallel_with ask nd ves no_ov =
+    if M.tracing then M.trace "test" "28";
     (* TODO: non-_with version? *)
     let env = A.env nd in
     (* partition assigns with supported and unsupported exps *)
@@ -387,6 +406,7 @@ struct
     A.assign_texpr_array_with Man.mgr nd vs texpr1s None
 
   let assign_var_parallel' d vs v's = (* unpaired parallel assigns *)
+  if M.tracing then M.trace "test" "31";
     (* TODO: _with version? *)
     let env = A.env d in
     let vs = Array.of_list vs in
@@ -401,6 +421,7 @@ struct
 
 
   let substitute_exp_with ask nd v e no_ov =
+    if M.tracing then M.trace "test" "32";
     match Convert.texpr1_of_cil_exp ask nd (A.env nd) e no_ov with
     | texpr1 ->
       Man.RelImpl.substitute_texpr_with Man.mgr nd v texpr1 None
@@ -408,6 +429,7 @@ struct
       forget_vars_with nd [v]
 
   let substitute_exp_parallel_with ask nd ves no_ov =
+    if M.tracing then M.trace "test" "33";
     (* TODO: non-_with version? *)
     let env = A.env nd in
     (* partition substitutes with supported and unsupported exps *)
@@ -438,6 +460,7 @@ struct
     A.forget_array_with Man.mgr nd unsupported_vs false
 
   let substitute_var_with nd v v' =
+    if M.tracing then M.trace "test" "34";
     (* TODO: non-_with version? *)
     let texpr1 = Texpr1.of_expr (A.env nd) (Var v') in
     A.substitute_texpr_with Man.mgr nd v texpr1 None
@@ -448,11 +471,14 @@ struct
     A.meet_tcons_array Man.mgr d earray
 
   let to_lincons_array d =
+    if M.tracing then M.trace "test" "36";
     A.to_lincons_array Man.mgr d
 
   let of_lincons_array (a: Apron.Lincons1.earray) =
+    if M.tracing then M.trace "test" "37";
     A.of_lincons_array Man.mgr a.array_env a
-  let unify (a:t) (b:t) = A.unify Man.mgr a b
+  let unify (a:t) (b:t) = 
+    if M.tracing then M.trace "test" "38";A.unify Man.mgr a b
 
   let cil_exp_of_lincons1 = Convert.cil_exp_of_lincons1
 end
@@ -492,11 +518,14 @@ struct
   let is_top_env = A.is_top Man.mgr
   let is_bot_env = A.is_bottom Man.mgr
 
-  let invariant _ = []
+  let invariant _ = 
+    if M.tracing then M.trace "test" "44";[]
 
   let show (x:t) =
+    if M.tracing then M.trace "test" "45";
     Format.asprintf "%a (env: %a)" A.print x (Environment.print: Format.formatter -> Environment.t -> unit) (A.env x)
-  let pretty () (x:t) = text (show x)
+  let pretty () (x:t) = 
+    if M.tracing then M.trace "test" "46";text (show x)
 
   let equal x y =
     Environment.equal (A.env x) (A.env y) && A.is_eq Man.mgr x y
@@ -505,11 +534,14 @@ struct
     Man.RelImpl.hash Man.mgr x
 
   let compare (x:t) y: int =
+    if M.tracing then M.trace "test" "49";
     (* there is no A.compare, but polymorphic compare should delegate to Abstract0 and Environment compare's implemented in Apron's C *)
     Stdlib.compare x y
-  let printXml f x = BatPrintf.fprintf f "<value>\n<map>\n<key>\nconstraints\n</key>\n<value>\n%s</value>\n<key>\nenv\n</key>\n<value>\n%s</value>\n</map>\n</value>\n" (XmlUtil.escape (Format.asprintf "%a" A.print x)) (XmlUtil.escape (Format.asprintf "%a" (Environment.print: Format.formatter -> Environment.t -> unit) (A.env x)))
+  let printXml f x = 
+    if M.tracing then M.trace "test" "50";BatPrintf.fprintf f "<value>\n<map>\n<key>\nconstraints\n</key>\n<value>\n%s</value>\n<key>\nenv\n</key>\n<value>\n%s</value>\n</map>\n</value>\n" (XmlUtil.escape (Format.asprintf "%a" A.print x)) (XmlUtil.escape (Format.asprintf "%a" (Environment.print: Format.formatter -> Environment.t -> unit) (A.env x)))
 
   let to_yojson (x: t) =
+    if M.tracing then M.trace "test" "51";
     let constraints =
       A.to_lincons_array Man.mgr x
       |> Lincons1Set.of_earray
@@ -524,9 +556,11 @@ struct
     ]
 
   let unify x y =
+    if M.tracing then M.trace "test" "52";
     A.unify Man.mgr x y
 
   let pretty_diff () (x, y) =
+    if M.tracing then M.trace "test" "53";
     let lcx = A.to_lincons_array Man.mgr x in
     let lcy = A.to_lincons_array Man.mgr y in
     let diff = Lincons1Set.(diff (of_earray lcy) (of_earray lcx)) in
@@ -547,7 +581,11 @@ struct
   include AOps (Tracked) (Man)
   include Tracked
 
-  let eval_interval ask = Bounds.bound_texpr
+  let eval_interval ask = 
+    if M.tracing then M.trace "test" "evalint-s";
+    let ret = Bounds.bound_texpr
+    in if M.tracing then M.trace "test" "evalint-e";
+    ret
 
   (** Assert a constraint expression.
 
@@ -598,6 +636,7 @@ struct
       end
 
   let invariant x =
+    if M.tracing then M.trace "test" "56";
     (* Would like to minimize to get rid of multi-var constraints directly derived from one-var constraints,
        but not implemented in Apron at all: https://github.com/antoinemine/apron/issues/44 *)
     (* let x = A.copy Man.mgr x in
@@ -618,6 +657,7 @@ struct
 
 
   let gce (x: Environment.t) (y: Environment.t): Environment.t =
+    if M.tracing then M.trace "test" "57";
     let (xi, xf) = Environment.vars x in
     (* TODO: check type compatibility *)
     let i = Array.filter (Environment.mem_var y) xi in
@@ -625,6 +665,7 @@ struct
     Environment.make i f
 
   let join x y =
+    if M.tracing then M.trace "test" "58";
     let x_env = A.env x in
     let y_env = A.env y in
     let c_env = gce x_env y_env in
@@ -636,11 +677,13 @@ struct
 
   (* TODO: move to AOps *)
   let meet_lincons d lincons1 =
+    if M.tracing then M.trace "test" "59";
     let earray = Lincons1.array_make (A.env d) 1 in
     Lincons1.array_set earray 0 lincons1;
     A.meet_lincons_array Man.mgr d earray
 
   let strengthening j x y =
+    if M.tracing then M.trace "test" "60";
     (* TODO: optimize strengthening *)
     if M.tracing then M.traceli "apron" "strengthening %a" pretty j;
     let x_env = A.env x in
@@ -707,17 +750,21 @@ struct
 
   (* top and bottom over the empty environment are different, pending  https://github.com/goblint/analyzer/issues/1380 *)
   let bot () =
+    if M.tracing then M.trace "test" "62";
     bot_env empty_env
 
   let top () =
     top_env empty_env
 
-  let is_bot x = equal (bot ()) x
-  let is_top x = equal (top ()) x
+  let is_bot x = 
+    if M.tracing then M.trace "test" "64";equal (bot ()) x
+  let is_top x = 
+    if M.tracing then M.trace "test" "65";equal (top ()) x
 
   let strengthening_enabled = GobConfig.get_bool "ana.apron.strengthening"
 
   let join x y =
+    if M.tracing then M.trace "test" "66";
     (* just to optimize joining folds, which start with bot *)
     if is_bot x then (* TODO: also for non-empty env *)
       y
@@ -738,9 +785,11 @@ struct
     )
 
   let meet x y =
+    if M.tracing then M.trace "test" "67";
     A.unify Man.mgr x y
 
   let leq x y =
+    if M.tracing then M.trace "test" "68";
     (* TODO: float *)
     let x_env = A.env x in
     let y_env = A.env y in
@@ -753,6 +802,7 @@ struct
       false
 
   let widen x y =
+    if M.tracing then M.trace "test" "69";
     let x_env = A.env x in
     let y_env = A.env y in
     if Environment.equal x_env y_env then (
@@ -806,6 +856,7 @@ struct
       y (* env increased, just use joined value in y, assuming env doesn't increase infinitely *)
 
   let widen x y =
+    if M.tracing then M.trace "test" "70";
     if M.tracing then M.traceli "apron" "widen %a %a" pretty x pretty y;
     let w = widen x y in
     if M.tracing then M.trace "apron" "widen same %B" (equal y w);
@@ -813,6 +864,7 @@ struct
     w
 
   let narrow x y =
+    if M.tracing then M.trace "test" "71";
     let x_env = A.env x in
     let y_env = A.env y in
     if Environment.equal x_env y_env then (
@@ -878,6 +930,7 @@ struct
   type marshal = OctagonD2.marshal
 
   let marshal t : Man.RelImpl.t Abstract0.t * string array =
+    if M.tracing then M.trace "test" "72";
     let convert_single (a: t): OctagonD2.t =
       if Man.RelImpl.manager_is_oct Man.mgr then
         Man.RelImpl.to_oct a
@@ -887,7 +940,8 @@ struct
     in
     OctagonD2.marshal @@ convert_single t
 
-  let unmarshal (m: marshal) = Man.RelImpl.of_oct @@ OctagonD2.unmarshal m
+  let unmarshal (m: marshal) = 
+    if M.tracing then M.trace "test" "73";Man.RelImpl.of_oct @@ OctagonD2.unmarshal m
 end
 
 (** Lift [D] to a non-reduced product with box.
@@ -899,87 +953,131 @@ struct
 
   include Printable.Prod (BoxD) (D)
 
-  let equal (_, d1) (_, d2) = D.equal d1 d2
-  let hash (_, d) = D.hash d
-  let compare (_, d1) (_, d2) = D.compare d1 d2
+  let equal (_, d1) (_, d2) = 
+    if M.tracing then M.trace "test" "74";D.equal d1 d2
+  let hash (_, d) = 
+    if M.tracing then M.trace "test" "75";D.hash d
+  let compare (_, d1) (_, d2) = 
+    if M.tracing then M.trace "test" "76";D.compare d1 d2
 
-  let leq (_, d1) (_, d2) = D.leq d1 d2
-  let join (b1, d1) (b2, d2) = (BoxD.join b1 b2, D.join d1 d2)
-  let meet (b1, d1) (b2, d2) = (BoxD.meet b1 b2, D.meet d1 d2)
-  let widen (b1, d1) (b2, d2) = (BoxD.widen b1 b2, D.widen d1 d2)
-  let narrow (b1, d1) (b2, d2) = (BoxD.narrow b1 b2, D.narrow d1 d2)
+  let leq (_, d1) (_, d2) = 
+    if M.tracing then M.trace "test" "77";D.leq d1 d2
+  let join (b1, d1) (b2, d2) = 
+    if M.tracing then M.trace "test" "78";(BoxD.join b1 b2, D.join d1 d2)
+  let meet (b1, d1) (b2, d2) = 
+    if M.tracing then M.trace "test" "79";(BoxD.meet b1 b2, D.meet d1 d2)
+  let widen (b1, d1) (b2, d2) = 
+    if M.tracing then M.trace "test" "80";(BoxD.widen b1 b2, D.widen d1 d2)
+  let narrow (b1, d1) (b2, d2) = 
+    if M.tracing then M.trace "test" "81";(BoxD.narrow b1 b2, D.narrow d1 d2)
 
-  let top () = (BoxD.top (), D.top ())
-  let bot () = (BoxD.bot (), D.bot ())
-  let is_top (_, d) = D.is_top d
-  let is_bot (_, d) = D.is_bot d
-  let top_env env = (BoxD.top_env env, D.top_env env)
-  let bot_env env = (BoxD.bot_env env, D.bot_env env)
-  let is_top_env (_, d) = D.is_top_env d
-  let is_bot_env (_, d) = D.is_bot_env d
-  let unify (b1, d1) (b2, d2) = (BoxD.unify b1 b2, D.unify d1 d2)
-  let copy (b, d) = (BoxD.copy b, D.copy d)
+  let top () = 
+    if M.tracing then M.trace "test" "82";(BoxD.top (), D.top ())
+  let bot () = 
+    if M.tracing then M.trace "test" "83";(BoxD.bot (), D.bot ())
+  let is_top (_, d) = 
+    if M.tracing then M.trace "test" "84";D.is_top d
+  let is_bot (_, d) = 
+    if M.tracing then M.trace "test" "85";D.is_bot d
+  let top_env env = 
+    if M.tracing then M.trace "test" "86";(BoxD.top_env env, D.top_env env)
+  let bot_env env = 
+    if M.tracing then M.trace "test" "87";(BoxD.bot_env env, D.bot_env env)
+  let is_top_env (_, d) = 
+    if M.tracing then M.trace "test" "88";D.is_top_env d
+  let is_bot_env (_, d) = 
+    if M.tracing then M.trace "test" "89";D.is_bot_env d
+  let unify (b1, d1) (b2, d2) = 
+    if M.tracing then M.trace "test" "90";(BoxD.unify b1 b2, D.unify d1 d2)
+  let copy (b, d) = 
+    if M.tracing then M.trace "test" "91";(BoxD.copy b, D.copy d)
 
   type marshal = BoxD.marshal * D.marshal
 
-  let marshal (b, d) = (BoxD.marshal b, D.marshal d)
-  let unmarshal (b, d) = (BoxD.unmarshal b, D.unmarshal d)
+  let marshal (b, d) = 
+    if M.tracing then M.trace "test" "93";(BoxD.marshal b, D.marshal d)
+  let unmarshal (b, d) = 
+    if M.tracing then M.trace "test" "94";(BoxD.unmarshal b, D.unmarshal d)
 
-  let mem_var (_, d) v = D.mem_var d v
-  let vars (_, d) = D.vars d
+  let mem_var (_, d) v = 
+    if M.tracing then M.trace "test" "95";D.mem_var d v
+  let vars (_, d) = 
+    if M.tracing then M.trace "test" "96";D.vars d
 
-  let pretty_diff () ((_, d1), (_, d2)) = D.pretty_diff () (d1, d2)
+  let pretty_diff () ((_, d1), (_, d2)) = 
+    if M.tracing then M.trace "test" "97";D.pretty_diff () (d1, d2)
 
   let add_vars_with (b, d) vs =
+    if M.tracing then M.trace "test" "98";
     BoxD.add_vars_with b vs;
     D.add_vars_with d vs
   let remove_vars_with (b, d) vs =
+    if M.tracing then M.trace "test" "99";
     BoxD.remove_vars_with b vs;
     D.remove_vars_with d vs
   let remove_filter_with (b, d) f =
+    if M.tracing then M.trace "test" "100";
     BoxD.remove_filter_with b f;
     D.remove_filter_with d f
   let keep_filter_with (b, d) f =
+    if M.tracing then M.trace "test" "101";
     BoxD.keep_filter_with b f;
     D.keep_filter_with d f
   let keep_vars_with (b, d) vs =
+    if M.tracing then M.trace "test" "102";
     BoxD.keep_vars_with b vs;
     D.keep_vars_with d vs
   let forget_vars_with (b, d) vs =
+    if M.tracing then M.trace "test" "103";
     BoxD.forget_vars_with b vs;
     D.forget_vars_with d vs
   let assign_exp_with ask (b, d) v e no_ov =
+    if M.tracing then M.trace "test" "104";
     BoxD.assign_exp_with ask b v e no_ov;
     D.assign_exp_with ask d v e no_ov
   let assign_exp_parallel_with ask (b, d) ves no_ov =
+    if M.tracing then M.trace "test" "105";
     BoxD.assign_exp_parallel_with ask b ves no_ov;
     D.assign_exp_parallel_with ask d ves no_ov
   let assign_var_with (b, d) v e =
+    if M.tracing then M.trace "test" "106";
     BoxD.assign_var_with b v e;
     D.assign_var_with d v e
   let assign_var_parallel_with (b, d) vvs =
+    if M.tracing then M.trace "test" "107";
     BoxD.assign_var_parallel_with b vvs;
     D.assign_var_parallel_with d vvs
   let assign_var_parallel' (b, d) vs v's =
+    if M.tracing then M.trace "test" "108";
     (BoxD.assign_var_parallel' b vs v's, D.assign_var_parallel' d vs v's)
   let substitute_exp_with ask (b, d) v e no_ov =
+    if M.tracing then M.trace "test" "109";
     BoxD.substitute_exp_with ask b v e no_ov;
     D.substitute_exp_with ask d v e no_ov
   let substitute_exp_parallel_with ask (b, d) ves no_ov =
+    if M.tracing then M.trace "test" "110";
     BoxD.substitute_exp_parallel_with ask b ves no_ov;
     D.substitute_exp_parallel_with ask d ves no_ov
   let substitute_var_with (b, d) v1 v2 =
+    if M.tracing then M.trace "test" "111";
     BoxD.substitute_var_with b v1 v2;
     D.substitute_var_with d v1 v2
-  let meet_tcons ask (b, d) c e = (BoxD.meet_tcons ask b c e, D.meet_tcons ask d c e)
-  let to_lincons_array (_, d) = D.to_lincons_array d
-  let of_lincons_array a = (BoxD.of_lincons_array a, D.of_lincons_array a)
+  let meet_tcons ask (b, d) c e = 
+    if M.tracing then M.trace "test" "112";(BoxD.meet_tcons ask b c e, D.meet_tcons ask d c e)
+  let to_lincons_array (_, d) = 
+    if M.tracing then M.trace "test" "113";D.to_lincons_array d
+  let of_lincons_array a = 
+    if M.tracing then M.trace "test" "114";(BoxD.of_lincons_array a, D.of_lincons_array a)
 
-  let cil_exp_of_lincons1 = D.cil_exp_of_lincons1
-  let assert_inv ask (b, d) e n no_ov = (BoxD.assert_inv ask b e n no_ov, D.assert_inv ask d e n no_ov)
-  let eval_int ask (_, d) = D.eval_int ask d
+  let cil_exp_of_lincons1 = 
+    if M.tracing then M.trace "test" "115";D.cil_exp_of_lincons1
+  let assert_inv ask (b, d) e n no_ov = 
+    if M.tracing then M.trace "test" "116";(BoxD.assert_inv ask b e n no_ov, D.assert_inv ask d e n no_ov)
+  let eval_int ask (_, d) = 
+    if M.tracing then M.trace "test" "117";D.eval_int ask d
 
   let invariant (b, d) =
+    if M.tracing then M.trace "test" "118";
     (* diff via lincons *)
     let lcb = D.to_lincons_array (D.of_lincons_array (BoxD.to_lincons_array b)) in (* convert through D to make lincons use the same format *)
     let lcd = D.to_lincons_array d in

@@ -71,11 +71,14 @@ struct
   type vartable = VM.t VMT.VH.t
 
   let local x = make_var (Local x)
-  let arg x = make_var (Arg x)
-  let return = make_var Return
+  let arg x = 
+    if Messages.tracing then Messages.trace "test" "r4";make_var (Arg x)
+  let return = 
+    if Messages.tracing then Messages.trace "test" "r5";make_var Return
   let global g = make_var (Global g)
 
   let to_cil_varinfo v =
+    if Messages.tracing then Messages.trace "test" "r7";
     match find_metadata v with
     | Some (Global v | Local v | Arg v) -> Some v
     | _ -> None
@@ -160,14 +163,17 @@ struct
   include Printable.Std
   open Pretty
 
-  let relift {rel; priv} = {rel = RD.relift rel; priv = PrivD.relift priv}
+  let relift {rel; priv} = 
+    if Messages.tracing then Messages.trace "test" "r8";{rel = RD.relift rel; priv = PrivD.relift priv}
 
   let show r =
+    if Messages.tracing then Messages.trace "test" "r9";
     let first  = RD.show r.rel in
     let third  = PrivD.show r.priv in
     "(" ^ first ^ ", " ^ third  ^ ")"
 
   let pretty () r =
+    if Messages.tracing then Messages.trace "test" "r10";
     text "(" ++
     RD.pretty () r.rel
     ++ text ", " ++
@@ -175,31 +181,40 @@ struct
     ++ text ")"
 
   let printXml f r =
+    if Messages.tracing then Messages.trace "test" "r11";
     BatPrintf.fprintf f "<value>\n<map>\n<key>\n%s\n</key>\n%a<key>\n%s\n</key>\n%a</map>\n</value>\n" (XmlUtil.escape (RD.name ())) RD.printXml r.rel (XmlUtil.escape (PrivD.name ())) PrivD.printXml r.priv
 
   let name () = RD.name () ^ " * " ^ PrivD.name ()
 
   let arbitrary () =
+    if Messages.tracing then Messages.trace "test" "r12";
     let to_tuple r = (r.rel, r.priv) in
     let of_tuple (rel, priv) = {rel; priv} in
     let tr = QCheck.pair (RD.arbitrary ()) (PrivD.arbitrary ()) in
     QCheck.map ~rev:to_tuple of_tuple tr
 
-  let bot () = {rel = RD.bot (); priv = PrivD.bot ()}
-  let is_bot {rel; priv} = RD.is_bot rel && PrivD.is_bot priv
-  let top () = {rel = RD.top (); priv = PrivD.bot ()}
-  let is_top {rel; priv} = RD.is_top rel && PrivD.is_top priv
+  let bot () = 
+    if Messages.tracing then Messages.trace "test" "r13";{rel = RD.bot (); priv = PrivD.bot ()}
+  let is_bot {rel; priv} = 
+    if Messages.tracing then Messages.trace "test" "r14";RD.is_bot rel && PrivD.is_bot priv
+  let top () = 
+    if Messages.tracing then Messages.trace "test" "r15";{rel = RD.top (); priv = PrivD.bot ()}
+  let is_top {rel; priv} = 
+    if Messages.tracing then Messages.trace "test" "r16";RD.is_top rel && PrivD.is_top priv
 
   let leq {rel=x1; priv=x3 } {rel=y1; priv=y3} =
+    if Messages.tracing then Messages.trace "test" "r17";
     RD.leq x1 y1 && PrivD.leq x3 y3
 
   let pretty_diff () (({rel=x1; priv=x3}:t),({rel=y1; priv=y3}:t)): Pretty.doc =
+    if Messages.tracing then Messages.trace "test" "r18";
     if not (RD.leq x1 y1) then
       RD.pretty_diff () (x1,y1)
     else
       PrivD.pretty_diff () (x3,y3)
 
   let op_scheme op1 op3 {rel=x1; priv=x3} {rel=y1; priv=y3}: t =
+    if Messages.tracing then Messages.trace "test" "r19";
     {rel = op1 x1 y1; priv = op3 x3 y3 }
   let join = op_scheme RD.join PrivD.join
   let meet = op_scheme RD.meet PrivD.meet

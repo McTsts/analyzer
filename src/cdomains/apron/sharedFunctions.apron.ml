@@ -7,6 +7,7 @@ open GobApron
 module M = Messages
 
 let int_of_scalar ?round (scalar: Scalar.t) =
+  if Messages.tracing then Messages.trace "test" "s1";
   if Scalar.is_infty scalar <> 0 then (* infinity means unbounded *)
     None
   else
@@ -87,6 +88,7 @@ struct
       and each analysis will only be able to establish constant bounds, but only its own interval bounds and not interval bounds
       established by other analyses.*)
   let overflow_handling no_ov ik env expr d exp =
+    if Messages.tracing then Messages.trace "test" "s2";
     match Cilfacade.get_ikind_exp exp with
     | exception Invalid_argument e ->  raise (Unsupported_CilExp Exp_not_supported)       (* expression is not an integer expression, i.e. float *)
     | ik ->
@@ -204,6 +206,7 @@ struct
     Texpr1.of_expr env res
 
   let tcons1_of_cil_exp ask d env e negate no_ov =
+    if Messages.tracing then Messages.trace "test" "s5";
     let e = Cil.constFold false e in
     let (texpr1_plus, texpr1_minus, typ) =
       match e with
@@ -246,6 +249,7 @@ struct
   exception Unsupported_Linexpr1
 
   let cil_exp_of_linexpr1 (linexpr1:Linexpr1.t) =
+    if Messages.tracing then Messages.trace "test" "s6";
     let longlong = TInt(ILongLong,[]) in
     let coeff_to_const consider_flip (c:Coeff.union_5) = match c with
       | Scalar c ->
@@ -286,6 +290,7 @@ struct
 
 
   let cil_exp_of_lincons1 (lincons1:Lincons1.t) =
+    if Messages.tracing then Messages.trace "test" "s7";
     let zero = Cil.kinteger ILongLong 0 in
     try
       let linexpr1 = Lincons1.get_linexpr1 lincons1 in
@@ -337,19 +342,25 @@ struct
   }
   [@@deriving eq, ord, hash]
 
-  let empty_env = Environment.make [||] [||]
+  let empty_env = 
+    if Messages.tracing then Messages.trace "test" "8";Environment.make [||] [||]
 
   let bot () =
+    if Messages.tracing then Messages.trace "test" "s9";
     {d = Some (RelDomain.empty ()); env = empty_env}
 
-  let get_env t = t.env
-  let bot_env = {d = None; env = empty_env}
+  let get_env t = 
+    if Messages.tracing then Messages.trace "test" "s10";t.env
+  let bot_env = 
+    if Messages.tracing then Messages.trace "test" "s11";{d = None; env = empty_env}
 
   let is_bot_env t = t.d = None
 
-  let copy t = {t with d = Option.map RelDomain.copy t.d}
+  let copy t = 
+    if Messages.tracing then Messages.trace "test" "s12";{t with d = Option.map RelDomain.copy t.d}
 
   let change_d t new_env ~add ~del =
+    if Messages.tracing then Messages.trace "test" "s13";
     if Environment.equal t.env new_env then
       t
     else
@@ -371,59 +382,76 @@ struct
         in
         {d = Some (if add then RelDomain.dim_add dim_change m else RelDomain.dim_remove dim_change m ~del:del); env = new_env}
 
-  let change_d t new_env ~add ~del = VectorMatrix.timing_wrap "dimension change" (fun del -> change_d t new_env ~add:add ~del:del) del
+  let change_d t new_env ~add ~del = 
+    if Messages.tracing then Messages.trace "test" "s14";VectorMatrix.timing_wrap "dimension change" (fun del -> change_d t new_env ~add:add ~del:del) del
 
-  let vars x = Environment.ivars_only x.env
+  let vars x = 
+    if Messages.tracing then Messages.trace "test" "s25";Environment.ivars_only x.env
 
   let add_vars t vars =
+    if Messages.tracing then Messages.trace "test" "s26";
     let t = copy t in
     let env' = Environment.add_vars t.env vars in
     change_d t env' ~add:true ~del:false
 
-  let add_vars t vars = VectorMatrix.timing_wrap "add_vars" (add_vars t) vars
+  let add_vars t vars = 
+    if Messages.tracing then Messages.trace "test" "s27";VectorMatrix.timing_wrap "add_vars" (add_vars t) vars
 
   let drop_vars t vars ~del =
+    if Messages.tracing then Messages.trace "test" "s28";
     let t = copy t in
     let env' = Environment.remove_vars t.env vars in
     change_d t env' ~add:false ~del:del
 
-  let drop_vars t vars = VectorMatrix.timing_wrap "drop_vars" (drop_vars t) vars
+  let drop_vars t vars = 
+    if Messages.tracing then Messages.trace "test" "s29";VectorMatrix.timing_wrap "drop_vars" (drop_vars t) vars
 
-  let remove_vars t vars = drop_vars t vars ~del:false
+  let remove_vars t vars = 
+    if Messages.tracing then Messages.trace "test" "s30";drop_vars t vars ~del:false
 
-  let remove_vars t vars = VectorMatrix.timing_wrap "remove_vars" (remove_vars t) vars
+  let remove_vars t vars = 
+    if Messages.tracing then Messages.trace "test" "s31";VectorMatrix.timing_wrap "remove_vars" (remove_vars t) vars
 
   let remove_vars_with t vars =
+    if Messages.tracing then Messages.trace "test" "s32";
     let t' = remove_vars t vars in
     t.d <- t'.d;
     t.env <- t'.env
 
   let remove_filter t f =
+    if Messages.tracing then Messages.trace "test" "s33";
     let env' = Environment.remove_filter t.env f in
     change_d t env' ~add:false ~del:false
 
-  let remove_filter t f = VectorMatrix.timing_wrap "remove_filter" (remove_filter t) f
+  let remove_filter t f = 
+    if Messages.tracing then Messages.trace "test" "s34";VectorMatrix.timing_wrap "remove_filter" (remove_filter t) f
 
   let remove_filter_with t f =
+    if Messages.tracing then Messages.trace "test" "s35";
     let t' = remove_filter t f in
     t.d <- t'.d;
     t.env <- t'.env
 
   let keep_filter t f =
+    if Messages.tracing then Messages.trace "test" "s36";
     let t = copy t in
     let env' = Environment.keep_filter t.env f in
     change_d t env' ~add:false ~del:false
 
-  let keep_filter t f = VectorMatrix.timing_wrap "keep_filter" (keep_filter t) f
+  let keep_filter t f = 
+    if Messages.tracing then Messages.trace "test" "s37";VectorMatrix.timing_wrap "keep_filter" (keep_filter t) f
 
   let keep_vars t vs =
+    if Messages.tracing then Messages.trace "test" "s38";
     let t = copy t in
     let env' = Environment.keep_vars t.env vs in
     change_d t env' ~add:false ~del:false
 
-  let keep_vars t vs = VectorMatrix.timing_wrap "keep_vars" (keep_vars t) vs
+  let keep_vars t vs = 
+    if Messages.tracing then Messages.trace "test" "s39";VectorMatrix.timing_wrap "keep_vars" (keep_vars t) vs
 
-  let mem_var t var = Environment.mem_var t.env var
+  let mem_var t var = 
+    if Messages.tracing then Messages.trace "test" "s40";Environment.mem_var t.env var
 
 end
 
@@ -446,7 +474,8 @@ end
 
 module Tracked: RelationDomain.Tracked =
 struct
-  let is_pthread_int_type = function
+  let is_pthread_int_type = 
+    if Messages.tracing then Messages.trace "test" "s44x";function
     | TNamed ({tname = ("pthread_t" | "pthread_key_t" | "pthread_once_t" | "pthread_spinlock_t"); _}, _) -> true (* on Linux these pthread types are integral *)
     | _ -> false
 
@@ -466,7 +495,8 @@ struct
   module Tracked = Tracked
   module Convert = Convert (V) (Bounds) (Arg) (Tracked)
 
-  let rec exp_is_constraint = function
+  let rec exp_is_constraint = 
+    if Messages.tracing then Messages.trace "test" "s44";function
     (* constraint *)
     | BinOp ((Lt | Gt | Le | Ge | Eq | Ne), _, _, _) -> true
     | BinOp ((LAnd | LOr), e1, e2, _) -> exp_is_constraint e1 && exp_is_constraint e2
@@ -478,6 +508,7 @@ struct
 
   (** Assert any expression. *)
   let assert_inv ask d e negate no_ov =
+    if Messages.tracing then Messages.trace "test" "s45";
     let e' =
       if exp_is_constraint e then
         e
@@ -488,6 +519,7 @@ struct
     assert_constraint ask d e' negate no_ov
 
   let check_assert ask d e no_ov =
+    if Messages.tracing then Messages.trace "test" "s46";
     if is_bot_env (assert_inv ask d e false no_ov) then
       `False
     else if is_bot_env (assert_inv ask d e true no_ov) then
@@ -497,14 +529,24 @@ struct
 
   (** Evaluate non-constraint expression as interval. *)
   let eval_interval_expr ask d e no_ov =
-    match Convert.texpr1_of_cil_exp ask d (env d) e no_ov with
+    if Messages.tracing then Messages.trace "test" "s47";
+    let funr = Convert.texpr1_of_cil_exp ask d (env d) e no_ov in
+    if Messages.tracing then Messages.trace "test" "s47mid";
+    let ret = match funr with
     | texpr1 ->
-      eval_interval ask d texpr1
+      if Messages.tracing then Messages.trace "test" "s47br1";
+      if Messages.tracing then Messages.trace "test" "s47br1m";
+      let retinner = eval_interval ask d texpr1
+      in if Messages.tracing then Messages.trace "test" "s47br1e";
+      retinner
     | exception Convert.Unsupported_CilExp _ ->
+      if Messages.tracing then Messages.trace "test" "s47br2";
       (None, None)
+    in if Messages.tracing then Messages.trace "test" "se";ret
 
   (** Evaluate constraint or non-constraint expression as integer. *)
   let eval_int ask d e no_ov =
+    if Messages.tracing then Messages.trace "test" "s48";
     let module ID = Queries.ID in
     match Cilfacade.get_ikind_exp e with
     | exception Cilfacade.TypeOfError _
@@ -530,13 +572,20 @@ end
    Used by affineEqualityDomain and linearTwoVarEqualityDomain *)
 module Mpqf = struct
   include Mpqf
-  let compare = cmp
-  let zero = of_int 0
-  let one = of_int 1
-  let mone = of_int (-1)
+  let compare = 
+    if Messages.tracing then Messages.trace "test" "s49";cmp
+  let zero = 
+    if Messages.tracing then Messages.trace "test" "s50";of_int 0
+  let one = 
+    if Messages.tracing then Messages.trace "test" "s51";of_int 1
+  let mone = 
+    if Messages.tracing then Messages.trace "test" "s52";of_int (-1)
 
-  let get_den x = Z_mlgmpidl.z_of_mpzf @@ Mpqf.get_den x
+  let get_den x = 
+    if Messages.tracing then Messages.trace "test" "s53";Z_mlgmpidl.z_of_mpzf @@ Mpqf.get_den x
 
-  let get_num x = Z_mlgmpidl.z_of_mpzf @@ Mpqf.get_num x
-  let hash x = 31 * (Z.hash (get_den x)) + Z.hash (get_num x)
+  let get_num x = 
+    if Messages.tracing then Messages.trace "test" "s54";Z_mlgmpidl.z_of_mpzf @@ Mpqf.get_num x
+  let hash x = 
+    if Messages.tracing then Messages.trace "test" "s55";31 * (Z.hash (get_den x)) + Z.hash (get_num x)
 end
