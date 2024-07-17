@@ -14,12 +14,18 @@ module Util =
     type result = Dom.t RH.t result_gen
 
     let init () =
+      if Messages.tracing then Messages.trace "test" "prec1";
       let module ApronImpl = (val ApronDomain.get_implementation "apron") in
       let module OctagonManagerInstance = OctagonManager (ApronImpl) in 
-      Apron.Manager.set_deserialize OctagonManagerInstance.mgr
+      let ret = Apron.Manager.set_deserialize OctagonManagerInstance.mgr in 
+      if Messages.tracing then Messages.trace "test" "prec2";
+      ret
 
     let unmarshal (m: marshal): D2.t RH.t =
-      RH.map (fun _ -> D2.unmarshal) m
+      if Messages.tracing then Messages.trace "test" "prec3";
+      let ret = RH.map (fun _ -> D2.unmarshal) m in
+      if Messages.tracing then Messages.trace "test" "prec4";
+      ret
   end
 
 include Util(OctagonD)
