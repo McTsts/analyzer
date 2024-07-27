@@ -150,4 +150,33 @@ module ElinaImplementation = struct
         bound_texpr_alt mgr d (Texpr1.to_expr texpr1)
       else 
         Abstract1.bound_texpr mgr d texpr1
+
+  
+  (*  Converts Texpr1's to use Double type
+    Implemented due to a comment on an issue:
+    https://github.com/eth-sri/ELINA/issues/95#issuecomment-2108485932
+  *)
+  let rec prepare_texpr_rec texpr =
+    match texpr with
+    (* Constant *)
+    | Texpr1.Cst cst ->
+      Texpr1.Cst (cst)
+    (* Variable *)
+    | Texpr1.Var var ->
+      Texpr1.Var (var)
+    (* Unary *)
+    | Texpr1.Unop (unop,expr,typ,round) ->
+      let expr_prepared = prepare_texpr_rec expr in 
+      Texpr1.Unop (unop, expr_prepared, Texpr1.Real, round)
+    (* Binary *)
+    | Texpr1.Binop (binop,expr1,expr2,typ,round) ->
+      let expr1_prepared = prepare_texpr_rec expr1 in 
+      let expr2_prepared = prepare_texpr_rec expr2 in 
+      Texpr1.Binop (binop, expr1_prepared, expr2_prepared, Texpr1.Real, round)
+
+    let prepare_texpr texpr = 
+      Texpr1.of_expr (Texpr1.get_env texpr) (prepare_texpr_rec (Texpr1.to_expr texpr))
+
+    let prepare_texprs texprs = Array.map prepare_texpr texprs
+      
 end

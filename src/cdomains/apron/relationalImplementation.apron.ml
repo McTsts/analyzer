@@ -19,4 +19,6 @@ sig
   val substitute_texpr_with : 'a Apron.Manager.t -> 'a Apron.Abstract1.t -> Apron.Var.t -> Apron.Texpr1.t -> 'a Apron.Abstract1.t option -> unit
   val hash : 'a Apron.Manager.t -> 'a Apron.Abstract1.t -> int
   val bound_texpr : 'a Manager.t -> string -> 'a Abstract1.t -> Texpr1.t -> Interval.t
+  val prepare_texpr : Texpr1.t -> Texpr1.t
+  val prepare_texprs : Texpr1.t array -> Texpr1.t array
 end

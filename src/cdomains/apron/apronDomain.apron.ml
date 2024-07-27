@@ -308,7 +308,7 @@ struct
     match Convert.texpr1_of_cil_exp ask nd (A.env nd) e no_ov with
     | texpr1 ->
       if M.tracing then M.trace "apron" "assign_exp converted: %s" (Format.asprintf "%a" Texpr1.print texpr1);
-      A.assign_texpr_with Man.mgr nd v texpr1 None
+      A.assign_texpr_with Man.mgr nd v (Man.RelImpl.prepare_texpr texpr1) None
     | exception Convert.Unsupported_CilExp _ ->
       if M.tracing then M.trace "apron" "assign_exp unsupported";
       forget_vars_with nd [v]
@@ -334,7 +334,7 @@ struct
       |> Enum.uncombine
       |> Tuple2.map Array.of_enum Array.of_enum
     in
-    A.assign_texpr_array_with Man.mgr nd supported_vs texpr1s None;
+    A.assign_texpr_array_with Man.mgr nd supported_vs (Man.RelImpl.prepare_texprs texpr1s) None;
     (* forget unsupported *)
     let unsupported_vs =
       unsupported
@@ -345,7 +345,7 @@ struct
 
   let assign_var_with nd v v' =
     let texpr1 = Texpr1.of_expr (A.env nd) (Var v') in
-    A.assign_texpr_with Man.mgr nd v texpr1 None
+    A.assign_texpr_with Man.mgr nd v (Man.RelImpl.prepare_texpr texpr1) None
 
   let assign_var_parallel_with nd vv's =
     (* TODO: non-_with version? *)
@@ -357,7 +357,7 @@ struct
       |> Enum.uncombine
       |> Tuple2.map Array.of_enum Array.of_enum
     in
-    A.assign_texpr_array_with Man.mgr nd vs texpr1s None
+    A.assign_texpr_array_with Man.mgr nd vs (Man.RelImpl.prepare_texprs texpr1s) None
 
   let assign_var_parallel' d vs v's = (* unpaired parallel assigns *)
     (* TODO: _with version? *)
@@ -369,7 +369,7 @@ struct
       |> Enum.map (Texpr1.var env)
       |> Array.of_enum
     in
-    A.assign_texpr_array Man.mgr d vs texpr1s None
+    A.assign_texpr_array Man.mgr d vs (Man.RelImpl.prepare_texprs texpr1s) None
     
 
 
@@ -401,7 +401,7 @@ struct
       |> Enum.uncombine
       |> Tuple2.map Array.of_enum Array.of_enum
     in
-    A.substitute_texpr_array_with Man.mgr nd supported_vs texpr1s None;
+    A.substitute_texpr_array_with Man.mgr nd supported_vs (Man.RelImpl.prepare_texprs texpr1s) None;
     (* forget unsupported *)
     let unsupported_vs =
       unsupported
@@ -413,7 +413,7 @@ struct
   let substitute_var_with nd v v' =
     (* TODO: non-_with version? *)
     let texpr1 = Texpr1.of_expr (A.env nd) (Var v') in
-    A.substitute_texpr_with Man.mgr nd v texpr1 None
+    A.substitute_texpr_with Man.mgr nd v (Man.RelImpl.prepare_texpr texpr1) None
 
   let meet_tcons _ d tcons1 e =
     let earray = Tcons1.array_make (A.env d) 1 in
